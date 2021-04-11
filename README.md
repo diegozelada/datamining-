@@ -1,0 +1,2 @@
+# datamining-
+proyecto 1 
