@@ -1,0 +1,111 @@
+---
+title: "Proyecto1- Zelada Morgado"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r eval=TRUE}
+
+library (tidyverse)
+library(quanteda)
+library(ggplot2)
+library(utf8)
+
+##lo que hacemos primero es cargar la base de datos con la cual vamos a trabajar##
+
+
+
+datatrabajo= read.csv(file.choose(), header = TRUE, sep = ";")
+
+##hacemos summary para reconocer el tipo de variables y concluimos que la unica variable cuantitativa es "nota##
+
+summary(datatrabajo)
+
+
+##lo segundo que hacemos es reconocer las variables, cuales pueden servir y cuales no##
+##vamos aproceder a trabajar con las variables nota, ingredientes, local. Esto debido a que creemos que segun
+##el problema que se nos plantea es conveniente trabajar con estas variables ##
+datareal1 = datatrabajo[,-c(1,3,4,7)]
+
+## ahora eliminamos datos nulos para trabajar con una data mas precisa##
+
+##con la función "sapply" podemos obtener la cantidad de valores NA por columna##
+##con la funcion na.omit borramos los valores NA de la bbdd##
+sapply(datareal1, function(x)sum(is.na(x)))
+
+datoslimpios= na.omit(datareal1)
+
+## ahora vamos a ordenar los datos de la nota mayor a la menor##
+datosordenados= datoslimpios[order(datoslimpios$nota, decreasing = TRUE),]
+
+## solo guardamos los datos que tengan nota 5 ##
+notas5= filter(datosordenados, nota=="5")
+
+##entramos al analisis de textos##
+
+textoanalisis= notas5$Ingredientes
+
+## utilizamos la funcion char_tolower() para dejar todas las letras en minuscula y no tener problemas
+textoanalisis=char_tolower(textoanalisis)
+##convertimos el tipo de archivo
+textoanalisis= iconv(textoanalisis, to = "ASCII//TRANSLIT")
+##removemos palabras que no nos sirven y obtenemos una matriz que indica los ingredientes que tienen
+## las hamburguesas que fueron calificadas en con 5 estrellas
+palabras = dfm(textoanalisis, remove = c((stopwords("es")),("ones"), (","),("?"), ("."),("("),(")"),("!")))
+
+## convertimos un archivo dfm (palabras) en un data frame para poder trabajar en el 
+ingredientescontar= data.frame(palabras)
+
+
+
+## sumamos las columnas(ingredientes) y obtenemos la información de los ingredientes que mas se repiten
+totalingredientes= colSums(ingredientescontar[, 2:56])
+totalingredientes
+
+##ordenamos la importancia de los ingredientes de mayor a menor
+ingredientesordenados = totalingredientes[order(totalingredientes, decreasing = TRUE)]
+ingredientesordenados
+ing = data.frame(ingredientesordenados)
+ing= add_rownames(ing, var= "ingredientes")
+ing
+ing1= ing[-c(15:55),]
+
+#creo un nuevo dataframe para poder acceder al valor de la frecuencia de los ingredientes
+ingredientesnew= c("queso", "cebolla", "mayonesa", "tomate", "pan", "tocino", "hamburguesa","morada", "carne", "ajo", "champia", "raocula", "miel", "res")
+frecuencia= c(33,22,19,18,14,12,11,7,7,6, 5, 5, 4, 4)
+
+nuevadata= data.frame(ingredientesnew, frecuencia)
+
+nuevadata
+
+nuevadata[,"ingredientesnew"]
+nuevadata[, "frecuencia"]
+
+ggplot(ing1) + aes(ingredientes, ingredientesordenados) +
+  geom_point() + theme(axis.text=element_text(size=12), axis.title=element_text(size=18))
+```
+
+
+```{r eval=TRUE}
+
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=TRUE}
+plot(pressure)
+ingredientescontar
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
